@@ -1,9 +1,9 @@
 (ns identisea.core
   (:gen-class)
-  (:require [identisea.meshed :as meshed]))
+  (:require [identisea.expander]))
 
 (defn -main
   [& args]
-  (meshed/main)) 
+  (identisea.expander/main)) 
 
 
