@@ -1,9 +1,9 @@
 (ns identisea.core
   (:gen-class)
-  (:require [identisea.expander]))
+  (:require [identisea.reexpander]))
 
 (defn -main
   [& args]
-  (identisea.expander/main)) 
+  (identisea.reexpander/main)) 
 
 

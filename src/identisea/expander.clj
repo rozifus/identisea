@@ -11,6 +11,57 @@
       (map (partial apply f) value-sets) 
       (meta f))))
 
+(def variables 2)
+
+(defprotocol Operation
+  (operate [this t p])
+  (last-op [this]))
+
+(def r-add
+  (for [i (range variables)]
+    (reify Operation
+      (operate [this t p] (+ t (nth p i)))
+      (last-op [this] "r-add"))))
+
+(def const
+  (for [i (range variables)]
+    (with-meta (fn [p] (nth p i))
+               {:last :const :var i})))
+
+(def t-add
+  (for [i (range variables)] 
+    (with-meta (fn [t p] (+ t (nth p i))) 
+               {:last :add :var i})))
+
+(def t-multiply
+  (for [i (range variables)]
+    (with-meta (fn [t p] (* t (nth p i)))
+               {:last :mult :var i})))
+
+(def t-exp
+  (for [i (range variables)]
+    (with-meta (fn [t p] (math/expt t (nth p i)))
+               {:last :t-exp :var i))
+
+(def exp-t
+  (for [i (range variables)]
+    (with-meta (fn [t p] (math/expt (nth p i) t))
+               {:last :exp-t :var i})))
+
+(def t-mod
+  (for [i (range variables)]
+    (with-meta (fn [t p] (mod t (nth p i)))
+               {:last :mod-t :var i})))
+
+(def mod-t
+  (for [i (range variables)]
+    (with-meta (fn [t p] (mod (nth p i) t))
+               {:last :t-mod :var i})))
+
+(doseq [f t-add]
+  (println f))
+
+
 (def x-add-y 
   (with-meta
     (sfn/fn [x y] (+ x y))
