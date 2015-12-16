@@ -26,37 +26,38 @@
 (def varbase 
   (for [i (range variables)]
     (with-meta (fn [p] (nth p i))
-               {:math :var})))
+               {:math :var :str (str "#" i)})))
 
+; should use a macro to create operators 
 (def t-add 
-  (fn [i o]
-    (with-meta (fn [p] (+ (i p) (o p))) 
-               {:math :lin})))
+  (with-meta (fn [i o] 
+               (fn [p] (+ (i p) (o p)))) 
+             {:math :lin :fmt "(+ %1$s %2$s)"}))
 
 (def t-multiply 
-  (fn [i o]
-    (with-meta (fn [p] (* (i p) (o p)))
-               {:math :geo})))
+  (with-meta (fn [i o] 
+               (fn [p] (* (i p) (o p)))) 
+             {:math :geo :fmt "(* %1$s %2$s)"}))
 
 (def t-exp
-  (fn [i o]
-    (with-meta (fn [p] (math/expt (i p) (o p)))
-               {:math :exp})))
+  (with-meta (fn [i o] 
+               (fn [p] (math/expt (i p) (o p)))) 
+             {:math :exp :fmt "(exp %1$s %2$s)"}))
 
 (def exp-t
-  (fn [i o]
-    (with-meta (fn [p] (math/expt (o p) (i p)))
-               {:math :exp})))
+  (with-meta (fn [i o] 
+               (fn [p] (math/expt (o p) (i p)))) 
+             {:math :exp :fmt "(exp %1$s %2$s)"}))
 
 (def t-mod
-  (fn [i o]
-    (with-meta (fn [p] (mod (i p) (o p)))
-               {:math :mod})))
+  (with-meta (fn [i o] 
+               (fn [p] (mod (i p) (o p)))) 
+             {:math :mod :fmt "(mod %1$s %2$s)"}))
 
 (def mod-t
-  (fn [i o]
-    (with-meta (fn [p] (mod (o p) (i p)))
-               {:math :mod})))
+  (with-meta (fn [i o] 
+               (fn [p] (mod (o p) (i p)))) 
+             {:math :mod :fmt "(mod %1$s %2$s)"}))
 
 #_(def fermat
   (with-meta 
@@ -65,7 +66,7 @@
 
 (def functions varbase)
 
-(def operations [t-add t-multiply t-exp exp-t t-mod mod-t])
+(def operations [t-add t-multiply t-exp t-mod])
 
 #_(def functions
   (map (fn [f] (vary-meta f assoc :last (:math (meta f)))) functions))
@@ -81,7 +82,9 @@
 
 (defn compose-functions 
   [o f1 f2]
-  (with-meta (o f1 f2) (meta o)))
+  (let [mo (meta o)
+        srep (format (:fmt mo) (:str (meta f1)) (:str (meta f2)))]
+    (with-meta (o f1 f2) (assoc mo :str srep)))) 
 
 (doseq [i (range complexity)]
   (def functions
@@ -93,7 +96,7 @@
         (compose-functions o f1 f2)))))
 
 (doseq [f functions]
-  (println f))
+  (println (:str (meta f))))
 
 (def search-size 10)
 
@@ -106,15 +109,19 @@
       result
       0.0)))
 
+(defn format-equality
+  [f1 f2]
+  (format "%s = %s" (:str (meta f1)) (:str (meta f2))))
+
 (defn search-mesh
   [mesh comparison]
     (for [[f1 f2] (comb/combinations mesh 2)]
       (with-meta [(decimal-true (map comparison f1 f2))]
-                 {:f1 (:func (meta f1)) :f2 (:func (meta f2)) :comp "="})))
+                 {:str (format-equality f1 f2)})))
 
 (defn format-function-pair-result
   [meta-val]
-    (str meta-val " " (:f1 (meta meta-val)) "-" (:f2 (meta meta-val))))
+    (str meta-val " " (:str (meta meta-val)) "-" (:str (meta meta-val))))
 
 
 (def mesh
@@ -123,8 +130,7 @@
       (f p))))
 
 (defn main []
-  (doall (map println 
-              (map format-function-pair-result
-                   (search-mesh mesh =)))))
+  (doall (map #(println (str % " " (:str (meta %)))) 
+              (search-mesh mesh =))))
 
 
